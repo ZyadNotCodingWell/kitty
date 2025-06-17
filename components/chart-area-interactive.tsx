@@ -103,7 +103,7 @@ export const DynamicAreaChart = ({
             <Tooltip
               cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1 }}
               contentStyle={{
-                backgroundColor: "var(--popover)",
+                backgroundColor: "var(--foreground)",
                 border: "1px solid var(--border)",
                 borderRadius: "0.5rem",
                 padding: "0.75rem",

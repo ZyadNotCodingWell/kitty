@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Card } from "@/components/ui/card"
 
-const APIKEY = "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"
+const APIKEY = "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"
 const APIURL = "https://openrouter.ai/api/v1/chat/completions"
 
 export default function Page() {

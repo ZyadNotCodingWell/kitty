@@ -42,9 +42,9 @@ const Hero151 = ({
     url: "/login",
   },
   testimonial = {
-    quote: "We're not getting enrolled after the internship",
-    author: "Avatar Team",
-    role: "Not serious interns",
+    quote: "Today is a good day, I guess.",
+    author: "A bunch of interns",
+    role: "thay're not landing a job",
     company: "DXC Technology",
     avatars: [
       { image: "https://shadcnblocks.com/images/block/avatar-1.webp", fallback: "AB" },
@@ -57,8 +57,8 @@ const Hero151 = ({
     second: "https://shadcnblocks.com/images/block/placeholder-dark-2.svg",
     third:  "/DXC_dark.svg",
     fourth: "https://shadcnblocks.com/images/block/placeholder-1.svg",
-    fifth:   "/helloKitty.svg",
-    sixth:   "/helloKitty_dark.svg"
+    fifth:   "/shadcn-ui-seeklogo.svg",
+    sixth:   "/vercel.svg"
   },
 }: Hero151Props) => {
   return (

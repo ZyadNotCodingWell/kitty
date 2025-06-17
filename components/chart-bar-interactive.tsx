@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts"
 
 import {
   Card,
@@ -106,9 +106,36 @@ export function BarChartInteractive({
                 })
               }}
             />
-            <ChartTooltip>
-              <ChartTooltipContent />
-            </ChartTooltip>
+            <Tooltip
+              cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1 }}
+              contentStyle={{
+                backgroundColor: "var(--popover)",
+                border: "1px solid var(--border)",
+                borderRadius: "0.5rem",
+                padding: "0.75rem",
+                lineHeight: 1.2,
+              }}
+              labelStyle={{
+                color: "var(--foreground)",
+                fontWeight: 800,
+                fontSize: "0.75rem",
+                marginBottom: "0.25rem",
+                
+              }}
+              itemStyle={{
+                color: "var(--muted-foreground)",
+                fontSize: "0.75rem",
+                padding: "0",
+                margin: "0",
+                
+              }}
+              labelFormatter={(val) =>
+                new Date(val).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })
+              }
+            />
             <Bar
               dataKey={activeChart}
               fill={colorMap[activeChart]}
