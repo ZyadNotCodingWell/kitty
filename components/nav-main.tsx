@@ -41,6 +41,7 @@ export function NavMain({
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
+          <ManageFoldersDialog />
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <a href={item.url}>
@@ -51,7 +52,6 @@ export function NavMain({
               </a>
             </SidebarMenuItem>
           ))}
-          <ManageFoldersDialog />
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

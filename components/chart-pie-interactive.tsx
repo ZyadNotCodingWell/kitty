@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import * as React from "react"
@@ -25,93 +27,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-const desktopData = [
-  { month: "january", desktop: 186, fill: "var(--color-january)" },
-  { month: "february", desktop: 305, fill: "var(--color-february)" },
-  { month: "march", desktop: 237, fill: "var(--color-march)" },
-  { month: "april", desktop: 173, fill: "var(--color-april)" },
-  { month: "may", desktop: 209, fill: "var(--color-may)" },
-]
 
-const chartConfig = {
-  visitors: {
-    label: "Visitors",
-  },
-  desktop: {
-    label: "Desktop",
-  },
-  mobile: {
-    label: "Mobile",
-  },
-  january: {
-    label: "January",
-    color: "var(--chart-1)",
-  },
-  february: {
-    label: "February",
-    color: "var(--chart-2)",
-  },
-  march: {
-    label: "March",
-    color: "var(--chart-3)",
-  },
-  april: {
-    label: "April",
-    color: "var(--chart-4)",
-  },
-  may: {
-    label: "May",
-    color: "var(--chart-5)",
-  },
-} satisfies ChartConfig
+export function DynamicPieChart({ fileUrl }: { fileUrl: string }) {
+  const [data, setData] = React.useState<any[]>([])
+  const [labelKey, setLabelKey] = React.useState<string>("")
+  const [valueKey, setValueKey] = React.useState<string>("")
+  const [activeLabel, setActiveLabel] = React.useState<string>("")
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
-export function ChartPieInteractive() {
-  const id = "pie-interactive"
-  const [activeMonth, setActiveMonth] = React.useState(desktopData[0].month)
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`http://localhost:8000/proxy-csv?fileUrl=${encodeURIComponent(fileUrl)}`)
+        const json = await res.json()
+        if (!json.length) throw new Error("Empty data")
 
-  const activeIndex = React.useMemo(
-    () => desktopData.findIndex((item) => item.month === activeMonth),
-    [activeMonth]
-  )
-  const months = React.useMemo(() => desktopData.map((item) => item.month), [])
+        const sample = json[0]
+        const allKeys = Object.keys(sample)
+        const label = allKeys.find(k => typeof sample[k] === "string") || allKeys[0]
+        const value = allKeys.find(k => typeof sample[k] === "number") || allKeys[1]
+
+        setData(json)
+        setLabelKey(label)
+        setValueKey(value)
+        setActiveLabel(json[0]?.[label])
+      } catch (err) {
+        setError("Failed to load chart data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [fileUrl])
+
+  const chartConfig: ChartConfig = React.useMemo(() => {
+    return data.reduce((acc, entry, idx) => {
+      const key = entry[labelKey]
+      acc[key] = {
+        label: key,
+        color: `var(--chart-${(idx % 5) + 1})`,
+      }
+      return acc
+    }, {} as ChartConfig)
+  }, [data, labelKey])
+
+  const activeIndex = data.findIndex((item) => item[labelKey] === activeLabel)
+
+  if (loading) return <p className="text-center">Loading pie chart...</p>
+  if (error) return <p className="text-center text-red-500">{error}</p>
+  if (!data.length || !labelKey || !valueKey) return null
 
   return (
-    <Card data-chart={id} className="flex flex-col h-full">
-      <ChartStyle id={id} config={chartConfig} />
+    <Card className="flex flex-col h-full">
+      <ChartStyle id="pie-interactive" config={chartConfig} />
       <CardHeader className="flex-row items-start space-y-0 pb-0">
-        <div className="grid gap-1">
-          <CardTitle>Pie Chart - Interactive</CardTitle>
-          <CardDescription>January - June 2024</CardDescription>
-        </div>
-        <Select value={activeMonth} onValueChange={setActiveMonth}>
-          <SelectTrigger
-            className="ml-auto h-7 w-[130px] rounded-lg pl-2.5"
-            aria-label="Select a value"
-          >
-            <SelectValue placeholder="Select month" />
+
+        <Select value={activeLabel} onValueChange={setActiveLabel}>
+          <SelectTrigger className="ml-auto h-7 w-[130px] rounded-lg pl-2.5" aria-label="Select a value">
+            <SelectValue placeholder="Select key" />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
-            {months.map((key) => {
-              const config = chartConfig[key as keyof typeof chartConfig]
-
-              if (!config) {
-                return null
-              }
-
+            {data.map((entry, idx) => {
+              const key = entry[labelKey]
               return (
-                <SelectItem
-                  key={key}
-                  value={key}
-                  className="rounded-lg [&_span]:flex"
-                >
+                <SelectItem key={idx} value={key} className="rounded-lg [&_span]:flex">
                   <div className="flex items-center gap-2 text-xs">
                     <span
                       className="flex h-3 w-3 shrink-0 rounded-sm"
-                      style={{
-                        backgroundColor: `var(--color-${key})`,
-                      }}
+                      style={{ backgroundColor: chartConfig[key]?.color ||  `var(--chart-${(idx % 5) + 1})` }}
                     />
-                    {config?.label}
+                    {key}
                   </div>
                 </SelectItem>
               )
@@ -121,7 +107,7 @@ export function ChartPieInteractive() {
       </CardHeader>
       <CardContent className="flex flex-1 justify-center pb-0">
         <ChartContainer
-          id={id}
+          id="pie-interactive"
           config={chartConfig}
           className="mx-auto aspect-square w-full max-w-[300px]"
         >
@@ -131,16 +117,13 @@ export function ChartPieInteractive() {
               content={<ChartTooltipContent hideLabel />}
             />
             <Pie
-              data={desktopData}
-              dataKey="desktop"
-              nameKey="month"
+              data={data}
+              dataKey={valueKey}
+              nameKey={labelKey}
               innerRadius={60}
               strokeWidth={5}
               activeIndex={activeIndex}
-              activeShape={({
-                outerRadius = 0,
-                ...props
-              }: PieSectorDataItem) => (
+              activeShape={({ outerRadius = 0, ...props }: PieSectorDataItem) => (
                 <g>
                   <Sector {...props} outerRadius={outerRadius + 10} />
                   <Sector
@@ -164,16 +147,16 @@ export function ChartPieInteractive() {
                         <tspan
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className="fill-foreground text-3xl font-bold"
+                          className="fill-accent-foreground text-3xl font-bold"
                         >
-                          {desktopData[activeIndex].desktop.toLocaleString()}
+                          {data[activeIndex]?.[valueKey]?.toLocaleString() || "0"}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Visitors
+                          Value
                         </tspan>
                       </text>
                     )

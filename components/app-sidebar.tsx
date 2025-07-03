@@ -46,7 +46,7 @@ const data = {
       icon: IconRobotFace,
     },
     {
-      title: "Analytics Assets Preview",
+      title: "Strategy Evaluation",
       url: "/dashboard/analytics",
       icon: IconChartBar,
     },

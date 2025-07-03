@@ -6,13 +6,14 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Card } from "@/components/ui/card"
 
-const APIKEY = "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"
+const APIKEY = "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"
 const APIURL = "https://openrouter.ai/api/v1/chat/completions"
 
 export default function Page() {
 	const [messages, setMessages] = useState<{ role: "user" | "assistant", content: string }[]>([])
 	const [input, setInput] = useState("")
 	const [loading, setLoading] = useState(false)
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [displayedResponse, setDisplayedResponse] = useState("")
 	const [typingText, setTypingText] = useState("")
 	const bottomRef = useRef<HTMLDivElement | null>(null)
@@ -94,12 +95,13 @@ export default function Page() {
     {/* Chat messages area */}
     <div className="flex-1 overflow-y-auto py-16 ">
       <Card className="w-full p-4 flex flex-col gap-2 shadow-none bg-neutral-100/0 dark:bg-neutral-700/0 border border-neutral-800/0 dark:border-neutral-200/0">
-        {messages.length === 0 && (
-          <div className="text-muted-foreground text-3xl text-center mt-10">
-            Start your chat with our AI
-          </div>
-        )}
-
+				    <Card
+            className={`w-fit max-w-[80%] py-1 px-2 bg-gradient-to-br rounded-sm border overflow-x-auto dark:border-neutral-300/15 border-neutral-800/5 dark:bg-neutral-800/60 bg-neutral-500/10 min-w-16 shadow-none dark:text-neutral-300 ${"self-start"}`}>
+            <div>
+              <p className="block text-sm text-violet-500 font-semibold">Hello Kitty</p>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>Your data has been analysed and processed, you can ask any question about it</ReactMarkdown>
+            </div>
+          </Card>
         {messages.map((msg, idx) => (
           <Card
             key={idx}

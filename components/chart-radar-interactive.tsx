@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
+import { useEffect, useState, useMemo } from "react"
 import { TrendingUp } from "lucide-react"
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
 
@@ -17,64 +20,77 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "var(--chart-1)",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "var(--chart-2)",
-  },
-} satisfies ChartConfig
+export function DynamicRadarChart({ fileUrl }: { fileUrl: string }) {
+  const [data, setData] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export function RadarChartInteractive() {
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`http://localhost:8000/proxy-csv?fileUrl=${encodeURIComponent(fileUrl)}`)
+        const json = await res.json()
+        setData(json)
+      } catch (err) {
+        setError("Failed to load radar chart data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [fileUrl])
+
+  const angleKey = useMemo(() => {
+    if (!data.length) return ""
+    const sample = data[0]
+    return Object.keys(sample).find(k => typeof sample[k] === "string") || Object.keys(sample)[0] || ""
+  }, [data])
+
+  const chartKeys = useMemo(() => {
+    if (!data.length) return []
+    return Object.keys(data[0]).filter(k => k !== angleKey && typeof data[0][k] === "number")
+  }, [data, angleKey])
+
+  const chartConfig: ChartConfig = useMemo(() => {
+    return chartKeys.reduce((acc, key, i) => {
+      acc[key] = {
+        label: key,
+        color: `var(--chart-${(i % 5) + 1})`,
+      }
+      return acc
+    }, {} as ChartConfig)
+  }, [chartKeys])
+
+  if (loading) return <p className="text-center">Loading radar chart...</p>
+  if (error) return <p className="text-center text-red-500">{error}</p>
+  if (!data.length || !angleKey || !chartKeys.length) return null
+
   return (
     <Card className="h-full">
-      <CardHeader className="items-center pb-4">
-        <CardTitle>Radar Chart - Multiple</CardTitle>
-        <CardDescription>
-          Showing total visitors for the last 6 months
-        </CardDescription>
-      </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer
           config={chartConfig}
           className="mx-auto aspect-square max-h-[250px]"
         >
-          <RadarChart data={chartData}>
+          <RadarChart data={data}>
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="line" />}
             />
-            <PolarAngleAxis dataKey="month" />
+            <PolarAngleAxis dataKey={angleKey} />
             <PolarGrid />
-            <Radar
-              dataKey="desktop"
-              fill="var(--color-desktop)"
-              fillOpacity={0.6}
-            />
-            <Radar dataKey="mobile" fill="var(--color-mobile)" />
+            {chartKeys.map((key) => (
+              <Radar
+                key={key}
+                dataKey={key}
+                fill={`var(--color-${key})`}
+                fillOpacity={0.6}
+              />
+            ))}
           </RadarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="flex items-center gap-2 leading-none text-muted-foreground">
-          January - June 2024
-        </div>
-      </CardFooter>
     </Card>
   )
 }

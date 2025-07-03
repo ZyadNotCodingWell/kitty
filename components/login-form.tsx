@@ -48,9 +48,11 @@ export function LoginForm({
                 <Input id="password" type="password" required />
               </div>
               <div className="flex flex-col gap-3 lg:mt-4">
-                <Button type="submit" className="w-full">
+                <a href="/../dashboard" className="w-full">
+                <Button type="submit" className="w-full pointer-events-none">
                   Login
                 </Button>
+                </a>
                 <Button variant="outline" className="w-full">
                   Login with Google
                 </Button>
