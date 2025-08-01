@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 
@@ -28,7 +29,8 @@ import {
 } from "@/components/ui/sidebar"
 import { ConnectDatabaseDialog } from "./ConnectDatabaseDialog"
 import { FileUploadDialog }  from "./fileUploadDialog"
-import { ManageUploadsDialog } from "./uploadManager"
+import { useEffect, useState } from "react"
+{/* import { ManageUploadsDialog } from "./uploadManager" */}
 
 export function NavDocuments({
   items,
@@ -41,13 +43,46 @@ export function NavDocuments({
 }) {
   const { isMobile } = useSidebar()
 
+
+  const [guid, setGuid] = useState(() => localStorage.getItem("active_project_guid"))
+  const [projectType, setProjectType] = useState(null)
+
+  // Listen to changes (optional: if other tabs modify localStorage)
+  useEffect(() => {
+    const handleStorage = () => {
+      setGuid(localStorage.getItem("active_project_guid"))
+      console.log("Storage changed, new guid:", localStorage.getItem("active_project_guid"))
+    }
+    window.addEventListener("storage", handleStorage)
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [])
+
+  useEffect(() => {
+    if (!guid) return
+
+    const fetchProject = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/users/projects/${guid}`)
+        if (!res.ok) throw new Error("Failed to fetch project")
+        const data = await res.json()
+        setProjectType(data.data_type)
+      } catch (err: any) {
+        console.error(err)
+        setProjectType(null)
+      }
+    }
+
+    fetchProject()
+  }, [guid])
+
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Data and connections</SidebarGroupLabel>
       <SidebarMenu>
-        <ConnectDatabaseDialog />
-        <FileUploadDialog />
-        <ManageUploadsDialog />
+        { guid && projectType !== "csv" && <ConnectDatabaseDialog guid_project={guid} />}
+        { guid && projectType !== "sql" && <FileUploadDialog /> }
+        
+        {/* <ManageUploadsDialog /> */}
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild className="">

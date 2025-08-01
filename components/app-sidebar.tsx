@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @next/next/no-html-link-for-pages */
 "use client"
@@ -110,7 +111,12 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ guid, name, email, ...props }: React.ComponentProps<typeof Sidebar> & {
+  guid: string
+  name: string
+  email: string
+}) {
+
 
   return (
     <Sidebar collapsible="offcanvas" {...props} >
@@ -137,7 +143,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={{
+          name,
+          email,
+          avatar: "/avatars/shadcn.jpg", // keep default or pass as prop later
+        }} />
       </SidebarFooter>
     </Sidebar>
   )

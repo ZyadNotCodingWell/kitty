@@ -20,26 +20,32 @@ export function FileUploadDialog() {
   const [open, setOpen] = useState(false)
   const [fail, setFail] = useState(false)
 
-  const isValidFile = (file: File) =>
-    ['text/csv', 'application/json', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(file.type)
+  const isValidFile = (file: File) => file.type === "text/csv"
 
   const handleFile = (f: File) => {
     if (isValidFile(f)) {
       setFile(f)
       setMessage(null)
     } else {
-      setMessage(' Invalid file type. Only .csv, .xlsx, and .json allowed.')
+      setMessage('Invalid file type. Only .csv files are allowed.')
     }
   }
 
   const handleSubmit = async () => {
     if (!file) return
 
+    const guid = localStorage.getItem("active_project_guid")
+    if (!guid) {
+      setMessage("No active project selected.")
+      setFail(true)
+      return
+    }
+
     const formData = new FormData()
     formData.append("file", file)
 
     try {
-      const res = await fetch("http://localhost:8000/Minio_Save", {
+      const res = await fetch(`http://localhost:8000/DB_Save/Save_in_to_Minio/${guid}`, {
         method: "POST",
         body: formData,
       })
@@ -47,9 +53,9 @@ export function FileUploadDialog() {
       if (!res.ok) throw new Error(`HTTP error: ${res.status}`)
 
       const data = await res.json()
-      setMessage(` ${data.message}`)
+      setMessage(`Upload successful: ${data}`)
       setFail(false)
-      // auto close after 2s
+
       setTimeout(() => {
         setOpen(false)
         setFile(null)
@@ -75,8 +81,8 @@ export function FileUploadDialog() {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-accent-foreground">Upload File</DialogTitle>
-          <DialogDescription>Upload your dataset (.csv, .xlsx, or .json)</DialogDescription>
+          <DialogTitle className="text-accent-foreground">Upload CSV File</DialogTitle>
+          <DialogDescription>Upload a .csv file for the selected project</DialogDescription>
         </DialogHeader>
 
         <div
@@ -91,15 +97,15 @@ export function FileUploadDialog() {
         >
           <UploadIcon className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
-            {file ? file.name : 'Click or drag & drop a file here'}
+            {file ? file.name : 'Click or drag & drop a CSV file here'}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Accepted: .csv, .xlsx, .json</p>
+          <p className="text-xs text-muted-foreground mt-1">Accepted: .csv only</p>
         </div>
 
         <input
           id="file-input"
           type="file"
-          accept=".csv,.xlsx,.json"
+          accept=".csv"
           className="hidden"
           onChange={(e) => {
             const selected = e.target.files?.[0]

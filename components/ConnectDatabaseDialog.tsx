@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState } from "react"
@@ -16,11 +15,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { IconDatabase } from "@tabler/icons-react"
 
-export function ConnectDatabaseDialog() {
+export function ConnectDatabaseDialog({ guid_project }: { guid_project: string }) {
   const [open, setOpen] = useState(false)
   const [host, setHost] = useState("")
   const [port, setPort] = useState("")
-  const [name, setName] = useState("")
+  const [dbname, setDbname] = useState("")
   const [user, setUser] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -29,21 +28,21 @@ export function ConnectDatabaseDialog() {
     setLoading(true)
 
     try {
-      await fetch("http://localhost:8000/connect", {
+      await fetch(`http://localhost:8000/Visualizer_DB/connect/${guid_project}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          host,
-          port: parseInt(port),
-          name,
+          dbname,
           user,
           password,
+          host,
+          port: parseInt(port),
         }),
       })
     } catch (err) {
-      // ignore error
+      console.error("Connection failed", err)
     } finally {
-      console.log("✅ Success")
+      console.log("✅ Request sent")
       setLoading(false)
       setOpen(false)
     }
@@ -52,10 +51,7 @@ export function ConnectDatabaseDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full justify-start hover:bg-muted"
-        >
+        <Button variant="ghost" className="w-full justify-start hover:bg-muted">
           <IconDatabase className="h-4 w-4 -translate-x-1" />
           <p className="-translate-x-1">Connect to Database</p>
         </Button>
@@ -75,8 +71,8 @@ export function ConnectDatabaseDialog() {
             <Input id="host" value={host} onChange={(e) => setHost(e.target.value)} placeholder="localhost" />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="database_name" />
+            <Label htmlFor="dbname">Database Name</Label>
+            <Input id="dbname" value={dbname} onChange={(e) => setDbname(e.target.value)} placeholder="my_database" />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="port">Port</Label>

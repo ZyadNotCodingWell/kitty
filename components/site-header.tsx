@@ -14,7 +14,7 @@ import {
 
 
 export function SiteHeader() {
-  const projectName = "Project Alpha"
+  const ProjectName = localStorage.getItem("active_project_name") || "Project"
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
@@ -42,7 +42,7 @@ export function SiteHeader() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/projects">{projectName}</BreadcrumbLink>
+              <BreadcrumbLink href="/projects">{ProjectName}</BreadcrumbLink>
             </BreadcrumbItem>
 
             <BreadcrumbSeparator />

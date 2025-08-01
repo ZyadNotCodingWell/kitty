@@ -1,8 +1,7 @@
 "use client"
 
-import { IconMail, type Icon } from "@tabler/icons-react"
+import { type Icon } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -28,16 +27,6 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="grid grid-cols-2 items-center gap-1">
             <QuickCreateDialog />
-            <div className="col-span-1 flex justify-start">
-              <Button
-                size="icon"
-                className="size-9 group-data-[collapsible=icon]:opacity-0 hover:bg-neutral-950/30 transition duration-200"
-                variant="outline"
-                >
-                <IconMail />
-                <span className="sr-only">Inbox</span>
-              </Button>
-            </div>
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>

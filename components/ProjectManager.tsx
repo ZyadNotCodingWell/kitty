@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogTrigger,
@@ -31,6 +32,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Button } from './ui/button'
 
 type Folder = {
   id: string
@@ -52,6 +54,12 @@ function SortableFolder({ id, name }: Folder) {
     transition,
     opacity: isDragging ? 0.5 : 1
   }
+  
+  const handleSelect = () => {
+    localStorage.setItem("active_project_guid", id.split("-").slice(0, 5).join("-"))
+    localStorage.setItem("active_project_name", name)
+  }
+
 
   return (
     <div
@@ -64,17 +72,33 @@ function SortableFolder({ id, name }: Folder) {
         <GripVertical {...listeners} className="cursor-grab w-4 h-4 text-muted-foreground" />
         <FolderIcon className="w-4 h-4 text-primary" />
         <span className="truncate max-w-[160px]">{name}</span>
+        <Button onClick={handleSelect} className="ml-2 text-xs">
+          Select
+        </Button>
       </div>
     </div>
   )
 }
 
 export function ManageFoldersDialog() {
-  const [folders, setFolders] = useState<Folder[]>([
-    { id: '1', name: 'Project Alpha' },
-    { id: '2', name: 'Project Omega' },
-    { id: '3', name: 'Project Epsilon' }
-  ])
+  const [folders, setFolders] = useState<Folder[]>([])
+
+  // Read from localStorage on mount
+  useEffect(() => {
+    const raw = localStorage.getItem("user_projects")
+    if (!raw) return
+
+    try {
+      const parsed = JSON.parse(raw)
+      const mapped = parsed.map((p: any, i: number) => ({
+        id: p.guid + "-" + i,
+        name: p.Project_name,
+      }))
+      setFolders(mapped)
+    } catch (e) {
+      console.error("Failed to parse projects:", e)
+    }
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -89,6 +113,8 @@ export function ManageFoldersDialog() {
       setFolders(arrayMove(folders, oldIndex, newIndex))
     }
   }
+  console.log("Folders after drag:", folders)
+
 
   return (
     <Dialog>
@@ -110,7 +136,7 @@ export function ManageFoldersDialog() {
         </DialogHeader>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={folders} strategy={verticalListSortingStrategy}>
+          <SortableContext items={folders.map(f => f.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {folders.map((folder) => (
                 <SortableFolder key={folder.id} id={folder.id} name={folder.name} />
