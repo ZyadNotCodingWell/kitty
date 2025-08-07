@@ -1,0 +1,29 @@
+# Node modules (re-installed in container)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output (will be generated in container)
+build
+dist
+
+# Git-related
+.git
+.gitignore
+
+# Editor & OS files
+.DS_Store
+.vscode
+.idea
+*.swp
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+nginx.conf
+
+# Optional environment files (if not needed in image)
+.env
+.env.*  # Only if you're injecting them manually or securely
+
+.next

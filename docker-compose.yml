@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80" # localhost:3000 → container port 80 (Nginx)
+    container_name: react-frontend
+    restart: unless-stopped
