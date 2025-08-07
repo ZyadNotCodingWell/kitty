@@ -1,4 +1,4 @@
-#docker file frant freat 19 with cmd npm run dev
+# Dockerfile
 FROM node:19
 WORKDIR /app
 COPY package*.json ./

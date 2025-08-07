@@ -6,6 +6,6 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:80" # localhost:3000 → container port 80 (Nginx)
+      - "3000:3000"  # localhost:3000 → container port 3000 (React dev server)
     container_name: react-frontend
     restart: unless-stopped
