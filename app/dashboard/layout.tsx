@@ -37,6 +37,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         const last = data[data.length - 1]
         localStorage.setItem("active_project_guid", last.guid.split("-").slice(0, 5).join("-"))
         localStorage.setItem("active_project_name", last.Project_name)
+        localStorage.setItem("active_project_type", last.data_type)
         console.log("Set default active project:", last.Project_name)
       }
     } catch (err) {

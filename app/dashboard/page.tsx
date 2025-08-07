@@ -1,49 +1,111 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DynamicAreaChart } from "@/components/chart-area-interactive"
+import { useState } from "react"
 import { DynamicBarChart } from "@/components/chart-bar-interactive"
 import { DynamicPieChart } from "@/components/chart-pie-interactive"
 import { DynamicRadarChart } from "@/components/chart-radar-interactive"
-import { useState } from "react"
+import { DynamicAreaChart } from "@/components/chart-area-interactive"
+
+type Visualization = {
+  title: string
+  description: string
+  suggested_chart: string
+  result_url: string
+}
+
+type FetchedChart = Visualization & {
+  chartData: { label: string; value: number }[]
+}
 
 export default function Page() {
-  const [apiData, setApiData] = useState<any | null>(null)
+  const [charts, setCharts] = useState<FetchedChart[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hasFetched, setHasFetched] = useState(false)
 
-  const handleFetch = async () => {
-    setLoading(true)
-    setError(null)
-    setHasFetched(true)
-    try {
-      const res = await fetch("http://localhost:8000/run-visualizations/")
-      const json = await res.json()
-      setApiData(json)
-    } catch (err) {
-      console.error(err)
-      setError("Failed to load visualizations.")
-    } finally {
-      setLoading(false)
+  const getChartComponent = (type: string, data: any) => {
+    switch (type.toLowerCase()) {
+      case "bar":
+        return <DynamicBarChart data={data} />
+      case "pie":
+        return <DynamicPieChart data={data} />
+      case "radar":
+        return <DynamicRadarChart data={data} />
+      case "area":
+        return <DynamicAreaChart data={data} />
+      default:
+        return <p className="text-sm text-gray-400">Unsupported chart type: {type}</p>
     }
   }
 
-  const renderChart = (chartType: string, fileUrl: string) => {
-    if (!fileUrl) return <p className="text-sm text-red-500">Missing fileUrl</p>
-    const proxiedUrl = fileUrl.replace("http://localhost:9000", "http://localhost:9000")
+  const fetchAndRenderCharts = async () => {
+    setLoading(true)
+    setError(null)
+    setCharts([])
 
-    switch (chartType.toLowerCase()) {
-      case "bar charts":
-        return <DynamicBarChart fileUrl={proxiedUrl} />
-      case "pie charts":
-        return <DynamicPieChart fileUrl={proxiedUrl} />
-      case "radar chart":
-        return <DynamicRadarChart fileUrl={proxiedUrl} />
-      case "area chart":
-        return <DynamicAreaChart fileUrl={proxiedUrl} />
-      default:
-        return <p className="text-sm text-gray-400">Chart type not supported: {chartType}</p>
+    try {
+      const projectGuid = localStorage.getItem("active_project_guid")
+      const projectType = localStorage.getItem("active_project_type")
+
+      if (!projectGuid) {
+        throw new Error("Missing project info in localStorage.")
+      }
+
+      // STEP 1 – Try to get saved visualizations
+      let visualizations: Visualization[] = []
+      const savedRes = await fetch(`http://localhost:8000/DB_Save/Elastic_GetByProject/${projectGuid}`)
+
+      if (savedRes.ok) {
+        console.log("no saved visualizations found, falling back to generation")
+        visualizations = await savedRes.json()
+      } else {
+        // STEP 2 – Fallback to generation
+        console.log("Starting generation for project:", projectGuid)
+        const genUrl =
+          projectType === "csv"
+            ? `http://localhost:8000/Visualizer_csv/analyst/${projectGuid}`
+            : `http://localhost:8000/Visualizer_DB/generate-JSON/${projectGuid}`
+
+        const genRes = await fetch(genUrl)
+        if (!genRes.ok) throw new Error("Failed to generate visualizations")
+        visualizations = await genRes.json()
+      }
+      console.log("Fetched visualizations:", visualizations)
+      // STEP 3 – Deduplicate & filter
+      const deduped = Array.from(
+        new Map(visualizations.map((v) => [v.result_url, v])).values()
+      ).filter((v) => v.result_url) // avoid undefined URLs
+
+      // STEP 4 – Fetch and normalize each dataset
+      const chartDataPromises = deduped.map(async (viz) => {
+        console.log("Fetching data for:", viz.title, "from", viz.result_url)
+
+        const fileUrl = `http://localhost:8000/DB_Save/proxy_csv/${viz.result_url}`
+        const fileRes = await fetch(fileUrl)
+        if (!fileRes.ok) throw new Error(`Failed to load data for ${viz.title}`)
+
+        const rawData = await fileRes.json()
+
+        // Generic dynamic normalization (uses first two columns as label/value)
+        const normalizedData = rawData.map((row: any) => {
+          const keys = Object.keys(row)
+          return {
+            label: String(row[keys[0]] ?? "unknown"),
+            value: parseFloat(row[keys[1]]) || 0,
+          }
+        })
+
+        console.log("Parsed data for", viz.title, normalizedData)
+        return { ...viz, chartData: normalizedData }
+      })
+
+      const fullCharts = await Promise.all(chartDataPromises)
+      setCharts(fullCharts)
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || "Something went wrong")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -51,32 +113,28 @@ export default function Page() {
     <div className="px-4 lg:px-6 py-8 space-y-6">
       <div className="text-center">
         <button
-          onClick={handleFetch}
+          onClick={fetchAndRenderCharts}
           className="px-6 py-2 bg-primary text-white rounded-md shadow hover:bg-primary/90 transition"
         >
-          Run Visualizations
+          Show Visualizations
         </button>
       </div>
 
-      {loading && <p className="text-center mt-4">Loading visualizations...</p>}
+      {loading && <p className="text-center mt-4">Crunching charts... 🎯📊</p>}
       {error && <p className="text-center text-red-500 mt-4">{error}</p>}
 
-      {apiData && (
-        <div className="mt-8">
-          <ul className="space-y-8">
-            {apiData.indexed_visualizations_ids.map((viz: any, index: number) => (
-              <li key={viz.file_url} className="">
-                <h3 className="font-medium text-accent-foreground text-lg mb-1">{viz.titre}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{viz.description}</p>
-                {renderChart(viz.suggested_chart, viz.file_url)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {!hasFetched && (
-        <p className="text-center text-muted-foreground">Click the button to generate visualizations.</p>
+      {charts.length > 0 && (
+        <ul className="space-y-10 mt-8">
+          {charts.map((viz) => (
+            <li key={viz.result_url}>
+              <h3 className="text-lg font-semibold text-accent-foreground mb-1">{viz.title}</h3>
+              <p className="text-sm text-muted-foreground mb-2">{viz.description}</p>
+                  {getChartComponent(viz.suggested_chart, viz.chartData)}
+              {/* Optional: debug viewer */}
+              {/* <pre className="text-xs bg-muted p-2 rounded">{JSON.stringify(viz.chartData, null, 2)}</pre> */}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )

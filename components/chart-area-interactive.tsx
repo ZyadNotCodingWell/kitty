@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as React from "react"
 import {
@@ -13,35 +11,16 @@ import {
   ResponsiveContainer,
   YAxis,
 } from "recharts"
+
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Card,
   CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
 } from "@/components/ui/card"
 
-export const DynamicAreaChart = ({ fileUrl }: { fileUrl: string }) => {
-  const [data, setData] = React.useState<any[]>([])
+export const DynamicAreaChart = ({ data }: { data: any[] }) => {
   const [timeRange, setTimeRange] = React.useState<"90d" | "30d" | "7d">("90d")
-  const [error, setError] = React.useState<string | null>(null)
-  const [loading, setLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    async function fetchJson() {
-      try {
-        const res = await fetch(`http://localhost:8000/proxy-csv?fileUrl=${encodeURIComponent(fileUrl)}`)
-        const json = await res.json()
-        setData(json)
-      } catch (err) {
-        setError("Error loading chart data")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchJson()
-  }, [fileUrl])
 
   const timeKey = React.useMemo(() => {
     if (!data.length) return ""
@@ -68,8 +47,6 @@ export const DynamicAreaChart = ({ fileUrl }: { fileUrl: string }) => {
     return data.filter((d) => new Date(d[timeKey]) >= from)
   }, [data, timeKey, timeRange, latestDate])
 
-  if (loading) return <p className="text-center">Loading area chart...</p>
-  if (error) return <p className="text-center text-red-500">{error}</p>
   if (!filteredData.length || !timeKey || variableKeys.length === 0) return null
 
   return (

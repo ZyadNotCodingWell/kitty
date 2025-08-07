@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as React from "react"
 import { Label, Pie, PieChart, Sector } from "recharts"
@@ -9,9 +8,7 @@ import { PieSectorDataItem } from "recharts/types/polar/Pie"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   ChartConfig,
@@ -28,38 +25,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function DynamicPieChart({ fileUrl }: { fileUrl: string }) {
-  const [data, setData] = React.useState<any[]>([])
+export function DynamicPieChart({ data }: { data: any[] }) {
   const [labelKey, setLabelKey] = React.useState<string>("")
   const [valueKey, setValueKey] = React.useState<string>("")
   const [activeLabel, setActiveLabel] = React.useState<string>("")
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(`http://localhost:8000/proxy-csv?fileUrl=${encodeURIComponent(fileUrl)}`)
-        const json = await res.json()
-        if (!json.length) throw new Error("Empty data")
+    if (!data.length) return
 
-        const sample = json[0]
-        const allKeys = Object.keys(sample)
-        const label = allKeys.find(k => typeof sample[k] === "string") || allKeys[0]
-        const value = allKeys.find(k => typeof sample[k] === "number") || allKeys[1]
+    const sample = data[0]
+    const allKeys = Object.keys(sample)
+    const label = allKeys.find((k) => typeof sample[k] === "string") || allKeys[0]
+    const value = allKeys.find((k) => typeof sample[k] === "number") || allKeys[1]
 
-        setData(json)
-        setLabelKey(label)
-        setValueKey(value)
-        setActiveLabel(json[0]?.[label])
-      } catch (err) {
-        setError("Failed to load chart data")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [fileUrl])
+    setLabelKey(label)
+    setValueKey(value)
+    setActiveLabel(data[0]?.[label])
+  }, [data])
 
   const chartConfig: ChartConfig = React.useMemo(() => {
     return data.reduce((acc, entry, idx) => {
@@ -74,17 +56,17 @@ export function DynamicPieChart({ fileUrl }: { fileUrl: string }) {
 
   const activeIndex = data.findIndex((item) => item[labelKey] === activeLabel)
 
-  if (loading) return <p className="text-center">Loading pie chart...</p>
-  if (error) return <p className="text-center text-red-500">{error}</p>
   if (!data.length || !labelKey || !valueKey) return null
 
   return (
     <Card className="flex flex-col h-full">
       <ChartStyle id="pie-interactive" config={chartConfig} />
       <CardHeader className="flex-row items-start space-y-0 pb-0">
-
         <Select value={activeLabel} onValueChange={setActiveLabel}>
-          <SelectTrigger className="ml-auto h-7 w-[130px] rounded-lg pl-2.5" aria-label="Select a value">
+          <SelectTrigger
+            className="ml-auto h-7 w-[130px] rounded-lg pl-2.5"
+            aria-label="Select a value"
+          >
             <SelectValue placeholder="Select key" />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
@@ -95,7 +77,10 @@ export function DynamicPieChart({ fileUrl }: { fileUrl: string }) {
                   <div className="flex items-center gap-2 text-xs">
                     <span
                       className="flex h-3 w-3 shrink-0 rounded-sm"
-                      style={{ backgroundColor: chartConfig[key]?.color ||  `var(--chart-${(idx % 5) + 1})` }}
+                      style={{
+                        backgroundColor:
+                          chartConfig[key]?.color || `var(--chart-${(idx % 5) + 1})`,
+                      }}
                     />
                     {key}
                   </div>
@@ -112,10 +97,7 @@ export function DynamicPieChart({ fileUrl }: { fileUrl: string }) {
           className="mx-auto aspect-square w-full max-w-[300px]"
         >
           <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
               data={data}
               dataKey={valueKey}

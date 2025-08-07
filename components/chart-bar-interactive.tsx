@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts"
@@ -8,14 +7,10 @@ import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 
 const COLORS = [
@@ -26,36 +21,20 @@ const COLORS = [
   "var(--chart-5)",
 ]
 
-export function DynamicBarChart({ fileUrl }: { fileUrl: string }) {
-  const [data, setData] = React.useState<any[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
-
-  React.useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(`http://localhost:8000/proxy-csv?fileUrl=${encodeURIComponent(fileUrl)}`)
-        const json = await res.json()
-        setData(json)
-      } catch (err) {
-        setError("Error loading chart data.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [fileUrl])
-
+export function DynamicBarChart({ data }: { data: any[] }) {
   const xKey = React.useMemo(() => {
     if (!data.length) return ""
     const sample = data[0]
-    return Object.keys(sample).find(k => typeof sample[k] === "string" || !isNaN(Date.parse(sample[k]))) || ""
+    return Object.keys(sample).find(
+      (k) => typeof sample[k] === "string" || !isNaN(Date.parse(sample[k]))
+    ) || ""
   }, [data])
 
   const chartKeys = React.useMemo(() => {
     if (!data.length || !xKey) return []
-    return Object.keys(data[0]).filter((key) => key !== xKey && typeof data[0][key] === "number")
+    return Object.keys(data[0]).filter(
+      (key) => key !== xKey && typeof data[0][key] === "number"
+    )
   }, [data, xKey])
 
   const [activeChart, setActiveChart] = React.useState("")
@@ -78,15 +57,12 @@ export function DynamicBarChart({ fileUrl }: { fileUrl: string }) {
     }, {} as Record<string, number>)
   }, [data, chartKeys])
 
-  if (loading) return <p className="text-center">Loading chart...</p>
-  if (error) return <p className="text-center text-red-500">{error}</p>
   if (!data.length || !xKey || !activeChart) return null
 
   return (
     <Card>
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
-
-        <div className="flex">
+        <div className="flex w-full">
           {chartKeys.map((key) => (
             <button
               key={key}
