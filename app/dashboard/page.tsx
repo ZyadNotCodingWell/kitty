@@ -45,11 +45,18 @@ export default function Page() {
 
     try {
       const projectGuid = localStorage.getItem("active_project_guid")
-      const projectType = localStorage.getItem("active_project_type")
 
       if (!projectGuid) {
         throw new Error("Missing project info in localStorage.")
       }
+
+      // ✅ STEP 0 – Fetch project info from backend instead of relying on localStorage
+      const projectInfoRes = await fetch(`http://localhost:8000/users/projects/${projectGuid}`)
+      if (!projectInfoRes.ok) throw new Error("Failed to fetch project info")
+
+      const projectInfo = await projectInfoRes.json()
+      const projectType = projectInfo.data_type?.toLowerCase()
+      if (!projectType) throw new Error("Invalid project type")
 
       // STEP 1 – Try to get saved visualizations
       let visualizations: Visualization[] = []
@@ -61,6 +68,8 @@ export default function Page() {
       } else {
         // STEP 2 – Fallback to generation
         console.log("Starting generation for project:", projectGuid)
+        console.log("Project type:", projectType)
+
         const genUrl =
           projectType === "csv"
             ? `http://localhost:8000/Visualizer_csv/analyst/${projectGuid}`
@@ -70,23 +79,24 @@ export default function Page() {
         if (!genRes.ok) throw new Error("Failed to generate visualizations")
         visualizations = await genRes.json()
       }
+
       console.log("Fetched visualizations:", visualizations)
+
       // STEP 3 – Deduplicate & filter
       const deduped = Array.from(
         new Map(visualizations.map((v) => [v.result_url, v])).values()
-      ).filter((v) => v.result_url) // avoid undefined URLs
+      ).filter((v) => v.result_url)
 
       // STEP 4 – Fetch and normalize each dataset
       const chartDataPromises = deduped.map(async (viz) => {
         console.log("Fetching data for:", viz.title, "from", viz.result_url)
 
-        const fileUrl = `http://localhost:8000/DB_Save/proxy_csv/${viz.result_url}`
+        const fileUrl = `http://localhost:8000/DB_Save/Get_from_Minio/${viz.result_url}`
         const fileRes = await fetch(fileUrl)
         if (!fileRes.ok) throw new Error(`Failed to load data for ${viz.title}`)
 
         const rawData = await fileRes.json()
 
-        // Generic dynamic normalization (uses first two columns as label/value)
         const normalizedData = rawData.map((row: any) => {
           const keys = Object.keys(row)
           return {
@@ -129,7 +139,10 @@ export default function Page() {
             <li key={viz.result_url}>
               <h3 className="text-lg font-semibold text-accent-foreground mb-1">{viz.title}</h3>
               <p className="text-sm text-muted-foreground mb-2">{viz.description}</p>
-                  {getChartComponent(viz.suggested_chart, viz.chartData)}
+              <p>
+                {viz.chartData.length} data points
+              </p>
+              {getChartComponent(viz.suggested_chart, viz.chartData)}
               {/* Optional: debug viewer */}
               {/* <pre className="text-xs bg-muted p-2 rounded">{JSON.stringify(viz.chartData, null, 2)}</pre> */}
             </li>
